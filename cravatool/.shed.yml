@@ -1,0 +1,16 @@
+categories:
+- Proteomics
+- Variant Analysis
+
+description: Creates a job in CRAVAT and supports proteogenomic input
+long_description: |
+
+  In Silico's CRAVAT querying tool with extended input and output support with a focus on proteogenomic input.
+
+  http://cravat.us/CRAVAT/help.jsp
+
+
+name: cravatool
+owner: galaxyp
+remote_repository_url: https://github.com/galaxyproteomics/tools-galaxyp/tree/master/tools/cravatool
+type: unrestricted
