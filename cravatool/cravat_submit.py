@@ -1,4 +1,4 @@
-import requests
+import requests # pipenv requests
 import json
 import time
 import urllib
@@ -8,56 +8,58 @@ import re
 import math
 import argparse
 from xml.etree import ElementTree as ET
-from StringIO import StringIO
 from zipfile import ZipFile
-from urllib import urlopen
-
+try: #Python 3
+    from urllib.request import urlopen
+except ImportError: #Python 2
+    from urllib2 import urlopen
+from io import BytesIO
 
 chasm_classifier = ''
 probed_filename = None
 intersected_only = False
 vcf_output = None
-#try:
-parser = argparse.ArgumentParser()
-parser.add_argument('cravatInput', help='The filename of the input CRAVAT-formatted tabular file (e.g., VCF)')
-parser.add_argument('GRCh', help='The name of the human reference genome used for annotation: GRCh38/hg38 or GRCh37/hg19')
-parser.add_argument('variant', help='The filename of the output variant file')
-parser.add_argument('gene', help='The filename of the output gene variant report')
-parser.add_argument('noncoding', help='The filename of the output non-coding variant report')
-parser.add_argument('error', help='The filename of the output error file')
-parser.add_argument('analysis', help='The machine-learning algorithm used for CRAVAT annotation (VEST and/or CHASM)')
-parser.add_argument('--classifier', help='The cancer classifier for the CHASM algorithm')
-parser.add_argument('--proBED', help='The filename of the proBED file containing peptides with genomic coordinates')
-parser.add_argument('--intersectOnly', help='The specification of whether to analyze only variants intersected between the CRAVAT input and proBED file')
-parser.add_argument('--vcfOutput', help='The output filename of the intersected VCF file') 
-args = parser.parse_args()
+try:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('cravatInput', help='The filename of the input CRAVAT-formatted tabular file (e.g., VCF)')
+    parser.add_argument('GRCh', help='The name of the human reference genome used for annotation: GRCh38/hg38 or GRCh37/hg19')
+    parser.add_argument('variant', help='The filename of the output variant file')
+    parser.add_argument('gene', help='The filename of the output gene variant report')
+    parser.add_argument('noncoding', help='The filename of the output non-coding variant report')
+    parser.add_argument('error', help='The filename of the output error file')
+    parser.add_argument('analysis', help='The machine-learning algorithm used for CRAVAT annotation (VEST and/or CHASM)')
+    parser.add_argument('--classifier', help='The cancer classifier for the CHASM algorithm')
+    parser.add_argument('--proBED', help='The filename of the proBED file containing peptides with genomic coordinates')
+    parser.add_argument('--intersectOnly', help='The specification of whether to analyze only variants intersected between the CRAVAT input and proBED file')
+    parser.add_argument('--vcfOutput', help='The output filename of the intersected VCF file') 
+    args = parser.parse_args()
 
-input_filename = args.cravatInput
-GRCh_build = args.GRCh
-output_filename = args.variant
-file_3 = args.gene
-file_4 = args.noncoding
-file_5 = args.error
-analysis_type = args.analysis
+    input_filename = args.cravatInput
+    GRCh_build = args.GRCh
+    output_filename = args.variant
+    file_3 = args.gene
+    file_4 = args.noncoding
+    file_5 = args.error
+    analysis_type = args.analysis
 
-if args.classifier:
-    chasm_classifier = args.classifier
-if args.proBED:
-    probed_filename = args.proBED
-if args.intersectOnly:
-    intersected_only = args.intersectOnly    
-if args.vcfOutput:
-    vcf_output = args.vcfOutput
-##except:
-##    input_filename = 'test-data/Freebayes.vcf'
-##    GRCh_build = 'GRCh38'
-##    output_filename = 'test-data/variant.tsv'
-##    probed_filename = 'test-data/MCF7_proBed.bed'
-##    file_3 = 'test-data/gene.tsv'
-##    file_4 = 'test-data/noncoding.tsv'
-##    file_5 = 'test-data/error.tsv'
-##    analysis_type = 'CHASM;VEST'
-##    chasm_classifier = 'Breast'
+    if args.classifier:
+        chasm_classifier = args.classifier
+    if args.proBED:
+        probed_filename = args.proBED
+    if args.intersectOnly:
+        intersected_only = args.intersectOnly    
+    if args.vcfOutput:
+        vcf_output = args.vcfOutput
+except:
+    input_filename = 'test-data/Freebayes-min.vcf'
+    GRCh_build = 'GRCh38'
+    output_filename = 'test-data/variant.tsv'
+    probed_filename = 'test-data/MCF7_proBed.bed'
+    file_3 = 'test-data/gene.tsv'
+    file_4 = 'test-data/noncoding.tsv'
+    file_5 = 'test-data/error.tsv'
+    analysis_type = 'CHASM;VEST'
+    chasm_classifier = 'Breast'
 
 
 if 'VEST' in analysis_type and 'CHASM' in analysis_type:
@@ -127,7 +129,6 @@ jobid = json.loads(submit.text)['jobid']
 #out_file.write(jobid)    
 submitted = json.loads(submit.text)['status']
 #out_file.write('\t' + submitted)
-
 input_file = open(input_filename)
 
 
@@ -145,15 +146,18 @@ while True:
 
 #obtains the zipfile created by CRAVAT and loads the variants and VAD file for processing
 #http://www.cravat.us/CRAVAT/results/rsajulga_20180709_124606/rsajulga_20180709_124606.zip
+r = requests.get(resultfileurl, stream=True)
 url = urlopen(resultfileurl)
-zipfile = ZipFile(StringIO(url.read()))
+#zipfile = ZipFile(StringIO(url.read()))
+#zipfile = ZipFile(StringIO(r.content))
+zipfile = ZipFile(BytesIO(r.content))
 variants = zipfile.open(jobid + '/Variant.Result.tsv').readlines()
 vad = zipfile.open(jobid + '/Variant_Additional_Details.Result.tsv').readlines()
 
 #reads and writes the gene, noncoding, and error files
-open(file_3, 'w').write(zipfile.read(jobid + '/Gene_Level_Analysis.Result.tsv'))
-open(file_4, 'w').write(zipfile.read(jobid + '/Variant_Non-coding.Result.tsv'))
-open(file_5, 'w').write(zipfile.read(jobid + '/Input_Errors.Result.tsv'))
+open(file_3, 'wb').write(zipfile.read(jobid + '/Gene_Level_Analysis.Result.tsv'))
+open(file_4, 'wb').write(zipfile.read(jobid + '/Variant_Non-coding.Result.tsv'))
+open(file_5, 'wb').write(zipfile.read(jobid + '/Input_Errors.Result.tsv'))
 
 
 
@@ -161,7 +165,7 @@ if probed_filename and not vcf_output:
     proBED = loadProBED()
 
 if probed_filename:
-    with open(output_filename, 'wb') as tsvout:
+    with open(output_filename, 'w') as tsvout:
         tsvout = csv.writer(tsvout, delimiter='\t',escapechar=' ', quoting=csv.QUOTE_NONE)
         n = 12 #Index for proteogenomic column start
         reg_seq_change = re.compile('([A-Z]+)(\d+)([A-Z]+)')
@@ -170,7 +174,7 @@ if probed_filename:
         pep_map = {}
         rows = []
         for row in vad:
-            row = row.split('\t')
+            row = row.decode().split('\t')
             row[-1] = row[-1].replace('\n','')
             if row and row[0] and not row[0].startswith('#'):
                 #checks if the row begins with input line
@@ -215,7 +219,7 @@ if probed_filename:
                             # Need to obtain strand information as well i.e., positive (+) or negative (-)
 
                             
-with open(output_filename, 'wb') as tsvout:
+with open(output_filename, 'w') as tsvout:
     tsvout = csv.writer(tsvout, delimiter='\t', escapechar='', quoting=csv.QUOTE_NONE)
 
     headers = []
@@ -223,10 +227,10 @@ with open(output_filename, 'wb') as tsvout:
             
     #loops through each row in the Variant Additional Details (VAD) file
     for x, row in enumerate(variants):
-        row = row.split('\t')
+        row = row.decode().split('\t')
         row[-1] = row[-1].replace('\n','')
         #sets row_2 equal to the same row in Variant Result (VR) file
-        row_2 = vad[x].split('\t')
+        row_2 = vad[x].decode().split('\t')
         row_2[-1] = row_2[-1].replace('\n','')
         
         #checks if row is empty or if the first term contains '#'
@@ -516,7 +520,3 @@ if False:
                                         cells[n+1] = pepseq
                                         cells[n] = ref_seq
                     tsvout.writerow(cells)
-
-
-
-
