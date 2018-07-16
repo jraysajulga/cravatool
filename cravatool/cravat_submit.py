@@ -167,7 +167,7 @@ if probed_filename and not vcf_output:
 if probed_filename:
     with open(output_filename, 'w') as tsvout:
         tsvout = csv.writer(tsvout, delimiter='\t',escapechar=' ', quoting=csv.QUOTE_NONE)
-        n = 12 #Index for proteogenomic column start
+        n = 11 #Index for proteogenomic column start
         reg_seq_change = re.compile('([A-Z]+)(\d+)([A-Z]+)')
         SOtranscripts = re.compile('([A-Z]+[\d\.]+):([A-Z]+\d+[A-Z]+)')
         pep_muts = {}
