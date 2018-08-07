@@ -19,6 +19,8 @@ chasm_classifier = ''
 probed_filename = None
 intersected_only = False
 vcf_output = None
+analysis_type = None
+
 try:
     parser = argparse.ArgumentParser()
     parser.add_argument('cravatInput', help='The filename of the input CRAVAT-formatted tabular file (e.g., VCF)')
@@ -31,17 +33,16 @@ try:
     parser.add_argument('--classifier', help='The cancer classifier for the CHASM algorithm')
     parser.add_argument('--proBED', help='The filename of the proBED file containing peptides with genomic coordinates')
     parser.add_argument('--intersectOnly', help='The specification of whether to analyze only variants intersected between the CRAVAT input and proBED file')
-    parser.add_argument('--vcfOutput', help='The output filename of the intersected VCF file') 
+    parser.add_argument('--vcfOutput', help='The output filename of the intersected VCF file')
     args = parser.parse_args()
-
     input_filename = args.cravatInput
     GRCh_build = args.GRCh
     output_filename = args.variant
     file_3 = args.gene
     file_4 = args.noncoding
     file_5 = args.error
-    analysis_type = args.analysis
-
+    if args.analysis != 'None':
+        analysis_type = args.analysis
     if args.classifier:
         chasm_classifier = args.classifier
     if args.proBED:
@@ -51,20 +52,20 @@ try:
     if args.vcfOutput:
         vcf_output = args.vcfOutput
 except:
-    input_filename = 'test-data/Freebayes-min.vcf'
+    input_filename = 'test-data/Freebayes_two-variants.vcf'
     GRCh_build = 'GRCh38'
     output_filename = 'test-data/variant.tsv'
     probed_filename = 'test-data/MCF7_proBed.bed'
     file_3 = 'test-data/gene.tsv'
     file_4 = 'test-data/noncoding.tsv'
     file_5 = 'test-data/error.tsv'
+    #vcf_output = 'test-data/intersected_vcf.vcf'
+    #intersected_only = 'true'
+    #analysis_type = 'CHASM'
+    #chasm_classifier = 'Breast'
+
+if analysis_type and '+' in analysis_type:
     analysis_type = 'CHASM;VEST'
-    chasm_classifier = 'Breast'
-
-
-if 'VEST' in analysis_type and 'CHASM' in analysis_type:
-    analysis_type = 'CHASM;VEST'
-
 
 def getSequence(transcript_id):
     server = 'http://rest.ensembl.org'
@@ -98,6 +99,8 @@ if GRCh_build == 'GRCh37':
 # if the user specifies that they want to only include intersected variants or if they want to receive the intersected VCF as well.
 if probed_filename and (vcf_output or intersected_only == 'true'):
     proBED = loadProBED()
+    if not vcf_output:
+        vcf_output = 'intersected_input.vcf'
     with open(input_filename) as tsvin, open(vcf_output, 'wb') as tsvout:
         tsvreader = csv.reader(tsvin, delimiter='\t')        
         tsvout = csv.writer(tsvout, delimiter='\t', escapechar=' ', quoting=csv.QUOTE_NONE)
@@ -119,9 +122,14 @@ if probed_filename and (vcf_output or intersected_only == 'true'):
 if intersected_only == 'true':
     input_filename = vcf_output
 
-
+parameters = {'email':'rsajulga@umn.edu', 'hg19': GRCh37hg19, 'functionalannotation': 'on', 'tsvreport' : 'on', 'mupitinput' : 'on'}
+if analysis_type:
+    parameters['analyses'] = analysis_type
+if chasm_classifier:
+    parameters['chasmclassifier'] = chasm_classifier
+    
 #plugs in params to given URL
-submit = requests.post('http://www.cravat.us/CRAVAT/rest/service/submit', files={'inputfile':open(input_filename)}, data={'email':'rsajulga@umn.edu', 'analyses': analysis_type, 'chasmclassifier': chasm_classifier,  'hg19': GRCh37hg19, 'tsvreport' : 'on'})
+submit = requests.post('http://www.cravat.us/CRAVAT/rest/service/submit', files={'inputfile':open(input_filename)}, data= parameters)
 
 #Makes the data a json dictionary, takes out only the job ID
 jobid = json.loads(submit.text)['jobid']
@@ -334,189 +342,4 @@ with open(output_filename, 'w') as tsvout:
                                     cells[n+1] = pepseq
                                     cells[n] = ref_seq
                 tsvout.writerow(cells)
-                   
 
-if False:
-    #creates three files
-    file_1 = 'Variant_Result.tsv'
-    file_2 = 'Additional_Details.tsv'
-    #file_3 = time.strftime("%H:%M") + 'Combined_Variant_Results.tsv'
-
-    #Downloads the tabular results
-    urllib.urlretrieve("http://staging.cravat.us/CRAVAT/results/" + jobid + "/" + "Variant.Result.tsv", file_1)
-    urllib.urlretrieve("http://staging.cravat.us/CRAVAT/results/" + jobid + "/" + "Variant_Additional_Details.Result.tsv", file_2)
-    urllib.urlretrieve("http://staging.cravat.us/CRAVAT/results/" + jobid + "/" + "Gene_Level_Analysis.Result.tsv", file_3)
-    urllib.urlretrieve("http://staging.cravat.us/CRAVAT/results/" + jobid + "/" + "Variant_Non-coding.Result.tsv", file_4)
-    urllib.urlretrieve("http://staging.cravat.us/CRAVAT/results/" + jobid + "/" + "Input_Errors.Result.tsv", file_5)
-
-    #opens the Variant Result file and the Variant Additional Details file as csv readers, then opens the output file (galaxy) as a writer
-    if probed_filename:
-        with open(file_1) as tsvin_1, open(file_2) as tsvin_2, open(output_filename, 'wb') as tsvout:
-            tsvreader_2 = csv.reader(tsvin_2, delimiter='\t')        
-            tsvout = csv.writer(tsvout, delimiter='\t',escapechar=' ', quoting=csv.QUOTE_NONE)
-
-            
-            n = 12 #Index for proteogenomic column start
-            reg_seq_change = re.compile('([A-Z]+)(\d+)([A-Z]+)')
-            SOtranscripts = re.compile('([A-Z]+[\d\.]+):([A-Z]+\d+[A-Z]+)')
-            pep_muts = {}
-            pep_map = {}
-            rows = []
-
-            for row in tsvreader_2:
-                if row and not row[0][0].startswith('#'):
-                #checks if the row begins with input line
-                    if row[0].startswith('Input line'):
-                        vad_headers = row
-                    else:
-                        # Initially screens through the output Variant Additional Details to catch mutations on same peptide region
-                        genchrom = row[vad_headers.index('Chromosome')]
-                        genpos = int(row[vad_headers.index('Position')])
-                        aa_change = row[vad_headers.index('Protein sequence change')]
-                        input_line = row[vad_headers.index('Input line')]
-                        
-                        for peptide in proBED:
-                            pepseq = peptide[3]
-                            pepchrom = peptide[0]
-                            pepposA = int(peptide[1])
-                            pepposB = int(peptide[2])
-                            if genchrom == pepchrom and pepposA <= genpos and genpos <= pepposB:
-                                strand = row[vad_headers.index('Strand')]
-                                transcript_strand = row[vad_headers.index('S.O. transcript strand')]
-
-                                # Calculates the position of the variant amino acid(s) on peptide
-                                if transcript_strand == strand:                               
-                                    aa_peppos = int(math.ceil((genpos - pepposA)/3.0) - 1)
-                                if strand == '-' or transcript_strand == '-' or aa_peppos >= len(pepseq):
-                                    aa_peppos = int(math.floor((pepposB - genpos)/3.0))
-                                if pepseq in pep_muts:
-                                    if aa_change not in pep_muts[pepseq]:
-                                        pep_muts[pepseq][aa_change] = [aa_peppos]
-                                    else:
-                                        if aa_peppos not in pep_muts[pepseq][aa_change]:
-                                            pep_muts[pepseq][aa_change].append(aa_peppos)
-                                else:
-                                    pep_muts[pepseq] = {aa_change : [aa_peppos]}
-                                # Stores the intersect information by mapping Input Line (CRAVAT output) to peptide sequence.
-                                if input_line in pep_map:
-                                    if pepseq not in pep_map[input_line]:
-                                        pep_map[input_line].append(pepseq)
-                                else:
-                                    pep_map[input_line] = [pepseq]
-                                # Need to obtain strand information as well i.e., positive (+) or negative (-)
-
-    with open(file_1) as tsvin_1, open(file_2) as tsvin_2, open(output_filename, 'wb') as tsvout:
-        tsvreader_1 = csv.reader(tsvin_1, delimiter='\t')
-        tsvreader_2 = csv.reader(tsvin_2, delimiter='\t')
-        tsvout = csv.writer(tsvout, delimiter='\t')
-
-        headers = []
-        duplicate_indices = []
-                
-        #loops through each row in the Variant Additional Details (VAD) file
-        for row in tsvreader_2:
-            
-            #sets row_2 equal to the same row in Variant Result (VR) file
-            row_2 = tsvreader_1.next()
-            #checks if row is empty or if the first term contains '#'
-            if row == [] or row[0][0] == '#':
-                tsvout.writerow(row)
-            else:
-                if row[0] == 'Input line': 
-                    #Goes through each value in the headers list in VAD
-                    for value in row:   
-                        #Adds each value into headers 
-                        headers.append(value)
-                    #Loops through the Keys in VR
-                    for i,value in enumerate(row_2):
-                        #Checks if the value is already in headers
-                        if value in headers:
-                            duplicate_indices.append(i)
-                            continue
-                        #else adds the header to headers
-                        else:
-                            headers.append(value)
-                    #Adds appropriate headers when proteomic input is supplied
-                    if probed_filename:
-                        headers.insert(n, 'Variant peptide')
-                        headers.insert(n, 'Reference peptide')
-                    tsvout.writerow(headers)
-                else:                        
-                    cells = []
-                    #Goes through each value in the next list
-                    for value in row:
-                        #adds it to cells
-                        cells.append(value)
-                    #Goes through each value from the VR file after position 11 (After it is done repeating from VAD file)
-                    for i,value in enumerate(row_2):
-                        #adds in the rest of the values to cells
-                        if i not in duplicate_indices:
-                            # Skips the initial 11 columns and the VEST p-value (already in VR file)
-                            cells.append(value)
-
-                    # Verifies the peptides intersected previously through sequences obtained from Ensembl's API
-                    if probed_filename:
-                        cells.insert(n,'')
-                        cells.insert(n,'')
-                        input_line = cells[headers.index('Input line')]
-                        if input_line in pep_map:
-                            pepseq = pep_map[input_line][0]
-                            aa_changes = pep_muts[pepseq]
-                            transcript_id = cells[headers.index('S.O. transcript')]
-                            ref_fullseq = getSequence(transcript_id)
-                            # Checks the other S.O. transcripts if the primary S.O. transcript has no sequence available
-                            if not ref_fullseq:
-                                transcripts = cells[headers.index('S.O. all transcripts')]
-                                for transcript in transcripts.split(','):
-                                    if transcript:
-                                        mat = SOtranscripts.search(transcript)
-                                        ref_fullseq = getSequence(mat.group(1))
-                                        if ref_fullseq:
-                                            aa_changes = {mat.group(2): [aa_changes.values()[0][0]]}
-                                            break
-                            # Resubmits the previous transcripts without extensions if all S.O. transcripts fail to provide a sequence
-                            if not ref_fullseq:
-                                transcripts = cells[headers.index('S.O. all transcripts')]
-                                for transcript in transcripts.split(','):
-                                    if transcript:
-                                        mat = SOtranscripts.search(transcript)
-                                        ref_fullseq = getSequence(mat.group(1).split('.')[0])
-                                        if ref_fullseq:
-                                            aa_changes = {mat.group(2): [aa_changes.values()[0][0]]}
-                                            break
-                            if ref_fullseq:
-                                # Sorts the amino acid changes
-                                positions = {}
-                                for aa_change in aa_changes:
-                                    m = reg_seq_change.search(aa_change)
-                                    aa_protpos = int(m.group(2))
-                                    aa_peppos = aa_changes[aa_change][0]
-                                    aa_startpos = aa_protpos - aa_peppos - 1
-                                    if aa_startpos in positions:
-                                        positions[aa_startpos].append(aa_change)
-                                    else:
-                                        positions[aa_startpos] = [aa_change]
-                                # Goes through the sorted categories to mutate the Ensembl peptide (uses proBED peptide as a reference)
-                                for pep_protpos in positions:
-                                    ref_seq = ref_fullseq[pep_protpos:pep_protpos+len(pepseq)]
-                                    muts = positions[pep_protpos]
-                                    options = []
-                                    mut_seq = ref_seq
-                                    for mut in muts:
-                                        m = reg_seq_change.search(mut)
-                                        ref_aa = m.group(1)
-                                        mut_pos = int(m.group(2))
-                                        alt_aa = m.group(3)
-                                        pep_mutpos = mut_pos - pep_protpos - 1
-                                        if ref_seq[pep_mutpos] == ref_aa and (pepseq[pep_mutpos] == alt_aa or pepseq[pep_mutpos] == ref_aa):
-                                            if pepseq[pep_mutpos] == ref_aa:
-                                                mut_seq = mut_seq[:pep_mutpos] + ref_aa + mut_seq[pep_mutpos+1:]
-                                            else:
-                                                mut_seq = mut_seq[:pep_mutpos] + alt_aa + mut_seq[pep_mutpos+1:]
-                                        else:
-                                            break
-                                    # Adds the mutated peptide and reference peptide if mutated correctly
-                                    if pepseq == mut_seq:
-                                        cells[n+1] = pepseq
-                                        cells[n] = ref_seq
-                    tsvout.writerow(cells)
