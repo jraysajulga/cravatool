@@ -110,11 +110,12 @@
   </inputs>
   
   <outputs>
-    <!--<collection name="collection" type="list" label="CRAVAT Results on ${on_string}">-->
+    <collection name="results" type="list" label="CRAVAT Results on ${on_string}">
       <data format="tabular" label="CRAVAT: Gene Level Annotation Report on ${on_string}" name="Gene" />
       <data format="tabular" label="CRAVAT: Variant Report on ${on_string}" name="Variant" />
       <data format="tabular" label="CRAVAT: Non-coding Variant Report on ${on_string}" name="Noncoding" />
       <data format="tabular" label="CRAVAT: Errors on ${on_string}" name="Error" />
+    </collection>
     <data format="vcf" label="Intersected VCF on ${on_string}" name="vcf_output">
         <filter>proteo['proteoInput'] == 'yes' and proteo['output_vcf']</filter>
       </data>
@@ -130,17 +131,19 @@
       <param name="Noncoding" value="noncoding.tsv"/>
       <param name="Error" value="error.tsv"/>
       <param name="type" value="None"/>
-      <output name="Variant">
-        <assert_contents>
-          <has_text text="#Variant Report" />
-          <has_text text="hg38"/>
-          <has_text text="UPF1" />
-          <not_has_text text="VEST" />
-        </assert_contents>
-      </output>
+      <output_collection name="results" type="list">
+        <element name="Variant">
+          <assert_contents>
+            <has_text text="#Variant Report" />
+            <has_text text="hg38"/>
+            <has_text text="UPF1" />
+            <not_has_text text="VEST" />
+          </assert_contents>
+        </element>
+      </output_collection>
     </test>
 
-    <!-- GRCh38/hg38 and no analysis test case -->
+     <!-- GRCh38/hg38 and no analysis test case -->
     <test>
       <param name="input" value="Freebayes_one-variant.vcf"/>
       <param name="GRCh" value="GRCh38"/>
@@ -149,14 +152,16 @@
       <param name="Noncoding" value="noncoding.tsv"/>
       <param name="Error" value="error.tsv"/>
       <param name="type" value="None"/>
-      <output name="Variant">
-        <assert_contents>
-          <has_text text="#Variant Report" />
-          <has_text text="hg38"/>
-          <has_text text="UPF1" />
-          <not_has_text text="VEST" />
-        </assert_contents>
-      </output>
+      <output_collection name="results" type="list">
+        <element name="Variant">
+          <assert_contents>
+            <has_text text="#Variant Report" />
+            <has_text text="hg38"/>
+            <has_text text="UPF1" />
+            <not_has_text text="VEST" />
+          </assert_contents>
+        </element>
+      </output_collection>
     </test>
 
     <!-- GRCh37/hg19 and no analysis test case -->
@@ -168,13 +173,15 @@
       <param name="Noncoding" value="noncoding.tsv"/>
       <param name="Error" value="error.tsv"/>
       <param name="type" value="None"/>
-      <output name="Variant">
-        <assert_contents>
-          <has_text text="#Variant Report" />
-          <has_text text="hg19"/>
-          <not_has_text text="VEST" />
-        </assert_contents>
-      </output>
+      <output_collection name="results" type="list">
+        <element name="Variant">
+          <assert_contents>
+            <has_text text="#Variant Report" />
+            <has_text text="hg19"/>
+            <not_has_text text="VEST" />
+          </assert_contents>
+        </element>
+      </output_collection>
     </test>
 
     <!-- CHASM with "Breast" classifier test case -->
@@ -187,15 +194,17 @@
       <param name="Error" value="error.tsv"/>
       <param name="type" value="CHASM"/>
       <param name="classifier" value="Breast"/>
-      <output name="Variant">
-        <assert_contents>
-          <has_text text="hg38"/>
-          <has_text text="UPF1" />
-          <has_text text="Breast" />
-          <has_text text="#Variant Report" />
-          <not_has_text text="VEST" />
-        </assert_contents>
-      </output>
+      <output_collection name="results" type="list">
+        <element name="Variant">
+          <assert_contents>
+            <has_text text="hg38"/>
+            <has_text text="UPF1" />
+            <has_text text="Breast" />
+            <has_text text="#Variant Report" />
+            <not_has_text text="VEST" />
+          </assert_contents>
+        </element>
+      </output_collection>
     </test>
 
     <!-- Proteogenomic test case -->
@@ -210,14 +219,16 @@
       <param name="classifier" value="Breast" />
       <param name="proteoInput" value="yes" />
       <param name="proBED" value="MCF7_proBed.bed"/>
-      <output name="Variant">
-        <assert_contents>
-          <has_text text="#Variant Report" />
-          <has_text text="hg38"/>
-          <has_text text="UPF1" />
-          <has_text text="EAIDSPVSFLVLHNQIR" />
-        </assert_contents>
-      </output>
+      <output_collection name="results" type="list">
+        <element name="Variant">
+          <assert_contents>
+            <has_text text="#Variant Report" />
+            <has_text text="hg38"/>
+            <has_text text="UPF1" />
+            <has_text text="EAIDSPVSFLVLHNQIR" />
+          </assert_contents>
+        </element>
+      </output_collection>
     </test>
     
     <!-- "Output intersected VCF" test case -->
@@ -249,14 +260,18 @@
       <param name="proteoInput" value="yes" />
       <param name="proBED" value="MCF7_proBed.bed"/>
       <param name="intersectedVariants" value="true" />
-      <output name="Variant">
-        <assert_contents>
-          <has_text text="hg38"/>
-          <has_text text="UPF1" />
-          <not_has_text text="CRABP2"/>
-        </assert_contents>
-      </output>
+      <output_collection name="results" type="list">
+        <element name="Variant">
+          <assert_contents>
+            <has_text text="hg38"/>
+            <has_text text="UPF1" />
+            <not_has_text text="CRABP2"/>
+          </assert_contents>
+        </element>
+      </output_collection>
     </test>
+
+   
   </tests>
 
   <help>
