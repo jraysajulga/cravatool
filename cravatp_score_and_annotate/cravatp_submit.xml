@@ -1,4 +1,4 @@
-<tool id="cravatp_submit" name="CRAVAT-P Submit, Intersect, Check, and Retrieve" version="1.0.0">
+<tool id="cravatp_submit" name="CRAVAT-P Submit, Intersect, Check, and Retrieve" version="1.1.0">
     <description>| Submits, intersects, checks for, and retrieves data for cancer annotation.</description>
   <command detect_errors="aggressive">
   <![CDATA[
@@ -20,20 +20,20 @@
   <inputs>
     <param format="vcf" name="input" type="data" label="Source file" help="Accepts transcriptomic or genomic inputs (e.g., tabular, VCF). Additional details can be found below."></param>
     <conditional name="proteo">
-      <param name="proteoInput" type="select" label="Intersect with proteogenomic input?" help="Source file (first input) must be in genomic input to enable intersection with this proteogenomic file.">
+      <param name="proteoInput" type="select" label="Intersect with proteogenomic input?" help="Source file (first input) must be in genomic input to enable intersection with this proteogenomic file. Only variants intersected between the genomic and proteogenomic files are annotated, unless specified otherwise below.">
         <option value="yes">Yes</option>
         <option value="no" selected="true">No</option>
       </param>
       <when value="yes">
         <param format="BED" name="proBED" type="data" label="Peptides with Genomic Coordinates (ProBED Format)"></param>
-        <param name="intersectedVariants" type="boolean" checked="false" label="Submit only intersected variants?" help="Submits the intersected portion of the genomic file to CRAVAT's server. Restricting analysis to only intersected variants takes less time but also provides less-comprehensive results."></param>
+        <param name="intersectedVariants" type="boolean" checked="false" label="Submit all variants?" help="Submits all variants, including non-intersected variants, to the CRAVAT server. This results in a complete genomic analysis at the expense of a longer runtime."></param>
         <param name="output_vcf" type="boolean" checked="false" label="Output intersected genomic file?" help="The intersected genomic file (e.g., VCF) will be included as a result."></param>
       </when>
       <when value="no">
       </when>
     </conditional>
     <conditional name="analysis">
-      <param format="tabular" name="type" type="select" label="Analysis Program" help="VEST and CHASM are machine learning methods for predicting the pathogenicity and functional significance of variants, respectively.">
+      <param format="tabular" name="type" type="select" label="Analysis Program" help="CHASM and VEST are machine learning methods for predicting the functional significance and pathogenicity of variants, respectively.">
           <option value="None">None</option>
           <option value="CHASM">CHASM</option>
           <option value="VEST">VEST</option>
@@ -110,7 +110,7 @@
     </param>
   </inputs>
   <outputs>
-    <collection name="results" type="list" label="CRAVAT Results on ${on_string}">
+    <collection name="results" type="list" label="CRAVAT-P Results on ${on_string}">
       <data format="tabular" label="CRAVAT: gene Level Annotation Report on ${on_string}" name="gene" />
       <data format="tabular" label="CRAVAT: Variant Report on ${on_string}" name="variant" />
       <data format="tabular" label="CRAVAT: Non-coding Variant Report on ${on_string}" name="noncoding" />
