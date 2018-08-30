@@ -20,20 +20,20 @@
   <inputs>
     <param format="vcf" name="input" type="data" label="Source file" help="Accepts transcriptomic or genomic inputs (e.g., tabular, VCF). Additional details can be found below."></param>
     <conditional name="proteo">
-      <param name="proteoInput" type="select" label="Intersect with proteogenomic input?" help="Source file (first input) must be in genomic input to enable intersection with this proteogenomic file. Only intersected variants are annotated, unless specified otherwise below.">
+      <param name="proteoInput" type="select" label="Intersect with proteogenomic input?" help="Source file (first input) must be in genomic input to enable intersection with this proteogenomic file. Only variants intersected between the genomic and proteogenomic files are annotated, unless specified otherwise below.">
         <option value="yes">Yes</option>
         <option value="no" selected="true">No</option>
       </param>
       <when value="yes">
         <param format="BED" name="proBED" type="data" label="Peptides with Genomic Coordinates (ProBED Format)"></param>
-        <param name="intersectedVariants" type="boolean" checked="false" label="Submit all variants?" help="Submits all variants to the CRAVAT server."></param>
+        <param name="intersectedVariants" type="boolean" checked="false" label="Submit all variants?" help="Submits all variants, including non-intersected variants, to the CRAVAT server. This results in a complete genomic analysis at the expense of a longer runtime."></param>
         <param name="output_vcf" type="boolean" checked="false" label="Output intersected genomic file?" help="The intersected genomic file (e.g., VCF) will be included as a result."></param>
       </when>
       <when value="no">
       </when>
     </conditional>
     <conditional name="analysis">
-      <param format="tabular" name="type" type="select" label="Analysis Program" help="VEST and CHASM are machine learning methods for predicting the pathogenicity and functional significance of variants, respectively.">
+      <param format="tabular" name="type" type="select" label="Analysis Program" help="CHASM and VEST are machine learning methods for predicting the functional significance and pathogenicity of variants, respectively.">
           <option value="None">None</option>
           <option value="CHASM">CHASM</option>
           <option value="VEST">VEST</option>
@@ -110,7 +110,7 @@
     </param>
   </inputs>
   <outputs>
-    <collection name="results" type="list" label="CRAVAT Results on ${on_string}">
+    <collection name="results" type="list" label="CRAVAT-P Results on ${on_string}">
       <data format="tabular" label="CRAVAT: gene Level Annotation Report on ${on_string}" name="gene" />
       <data format="tabular" label="CRAVAT: Variant Report on ${on_string}" name="variant" />
       <data format="tabular" label="CRAVAT: Non-coding Variant Report on ${on_string}" name="noncoding" />
@@ -121,125 +121,6 @@
       </data>
   </outputs>
   <tests>
-    <!-- GRCh38/hg38 and no analysis test case -->
-    <test>
-      <param name="input" value="Freebayes_one-variant.vcf"/>
-      <param name="GRCh" value="GRCh38"/>
-      <param name="variant" value="variant.tsv"/>
-      <param name="gene" value="gene.tsv"/>
-      <param name="noncoding" value="noncoding.tsv"/>
-      <param name="error" value="error.tsv"/>
-      <param name="type" value="None"/>
-      <output_collection name="results" type="list">
-        <element name="variant">
-          <assert_contents>
-            <has_text text="#Variant Report" />
-            <has_text text="hg38"/>
-            <has_text text="UPF1" />
-            <not_has_text text="VEST" />
-          </assert_contents>
-        </element>
-      </output_collection>
-    </test>
-     <!-- GRCh38/hg38 and no analysis test case -->
-    <test>
-      <param name="input" value="Freebayes_one-variant.vcf"/>
-      <param name="GRCh" value="GRCh38"/>
-      <param name="variant" value="variant.tsv"/>
-      <param name="gene" value="gene.tsv"/>
-      <param name="noncoding" value="noncoding.tsv"/>
-      <param name="error" value="error.tsv"/>
-      <param name="type" value="None"/>
-      <output_collection name="results" type="list">
-        <element name="variant">
-          <assert_contents>
-            <has_text text="#Variant Report" />
-            <has_text text="hg38"/>
-            <has_text text="UPF1" />
-            <not_has_text text="VEST" />
-          </assert_contents>
-        </element>
-      </output_collection>
-    </test>
-    <!-- GRCh37/hg19 and no analysis test case -->
-    <test>
-      <param name="input" value="Freebayes_one-variant.vcf"/>
-      <param name="GRCh" value="GRCh37"/>
-      <param name="variant" value="variant.tsv"/>
-      <param name="gene" value="gene.tsv"/>
-      <param name="noncoding" value="noncoding.tsv"/>
-      <param name="error" value="error.tsv"/>
-      <param name="type" value="None"/>
-      <output_collection name="results" type="list">
-        <element name="variant">
-          <assert_contents>
-            <has_text text="#Variant Report" />
-            <has_text text="hg19"/>
-            <not_has_text text="VEST" />
-          </assert_contents>
-        </element>
-      </output_collection>
-    </test>
-    <!-- CHASM with "Breast" classifier test case -->
-    <test>
-      <param name="input" value="Freebayes_one-variant.vcf"/>
-      <param name="GRCh" value="GRCh38"/>
-      <param name="variant" value="variant.tsv"/>
-      <param name="gene" value="gene.tsv"/>
-      <param name="noncoding" value="noncoding.tsv"/>
-      <param name="error" value="error.tsv"/>
-      <param name="type" value="CHASM"/>
-      <param name="classifier" value="Breast"/>
-      <output_collection name="results" type="list">
-        <element name="variant">
-          <assert_contents>
-            <has_text text="hg38"/>
-            <has_text text="UPF1" />
-            <has_text text="Breast" />
-            <has_text text="#Variant Report" />
-            <not_has_text text="VEST" />
-          </assert_contents>
-        </element>
-      </output_collection>
-    </test>
-    <!-- Proteogenomic test case -->
-    <test>
-      <param name="input" value="Freebayes_one-variant.vcf"/>
-      <param name="GRCh" value="GRCh38"/>
-      <param name="variant" value="variant.tsv"/>
-      <param name="gene" value="gene.tsv"/>
-      <param name="noncoding" value="noncoding.tsv"/>
-      <param name="error" value="error.tsv"/>
-      <param name="type" value="CHASM" />
-      <param name="classifier" value="Breast" />
-      <param name="proteoInput" value="yes" />
-      <param name="proBED" value="MCF7_proBed.bed"/>
-      <output_collection name="results" type="list">
-        <element name="variant">
-          <assert_contents>
-            <has_text text="#Variant Report" />
-            <has_text text="hg38"/>
-            <has_text text="UPF1" />
-            <has_text text="EAIDSPVSFLVLHNQIR" />
-          </assert_contents>
-        </element>
-      </output_collection>
-    </test>
-    <!-- "Output intersected VCF" test case -->
-    <test>
-      <param name="input" value="Freebayes_one-variant.vcf"/>
-      <param name="GRCh" value="GRCh38"/>
-      <param name="variant" value="variant.tsv"/>
-      <param name="gene" value="gene.tsv"/>
-      <param name="noncoding" value="noncoding.tsv"/>
-      <param name="error" value="error.tsv"/>
-      <param name="type" value="CHASM" />
-      <param name="classifier" value="Breast" />
-      <param name="proteoInput" value="yes" />
-      <param name="proBED" value="MCF7_proBed.bed"/>
-      <param name="output_vcf" value="true"/>
-      <output name="vcf_output" file="results/intersected_vcf.vcf"/>
-    </test>
     <!-- "Only intersected proteogenomic variants submitted" test case-->
     <test>
       <param name="input" value="Freebayes_two-variants.vcf"/>
