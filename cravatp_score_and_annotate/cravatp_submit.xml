@@ -1,4 +1,4 @@
-<tool id="cravatp_submit" name="CRAVAT-P Submit, Intersect, Check, and Retrieve" version="1.1.0">
+<tool id="cravatp_submit" name="CRAVAT-P Submit, Intersect, Check, and Retrieve" version="1.0.0">
     <description>| Submits, intersects, checks for, and retrieves data for cancer annotation.</description>
   <command detect_errors="aggressive">
   <![CDATA[
