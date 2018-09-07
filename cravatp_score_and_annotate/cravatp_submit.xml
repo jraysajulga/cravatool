@@ -4,9 +4,9 @@
   <![CDATA[
 #if $proteo.proteoInput == 'yes':
     #if '$analysis.type' == 'CHASM' or '$analysis.type' == 'CHASM+VEST':
-        python '$__tool_directory__/cravatp_submit.py' '$input' '$GRCh' '$variant' '$gene' '$noncoding' '$error' '$analysis.type' --classifier '$analysis.classifier' --proBED '$proBED' --intersectOnly '$proteo.intersectedVariants' --vcfOutput '$vcf_output'
+        python '$__tool_directory__/cravatp_submit.py' '$input' '$GRCh' '$variant' '$gene' '$noncoding' '$error' '$analysis.type' --classifier '$analysis.classifier' --proBED '$proBED' --allIntersect '$proteo.intersectedVariants' --vcfOutput '$vcf_output'
     #else: 
-        python '$__tool_directory__/cravatp_submit.py' '$input' '$GRCh' '$variant' '$gene' '$noncoding' '$error' '$analysis.type' --proBED '$proBED' --intersectOnly '$proteo.intersectedVariants' --vcfOutput '$vcf_output' 
+        python '$__tool_directory__/cravatp_submit.py' '$input' '$GRCh' '$variant' '$gene' '$noncoding' '$error' '$analysis.type' --proBED '$proBED' --allIntersect '$proteo.intersectedVariants' --vcfOutput '$vcf_output' 
     #end if
 #else:
     #if $analysis.type == 'CHASM' or $analysis.type == 'CHASM+VEST':
@@ -121,6 +121,28 @@
       </data>
   </outputs>
   <tests>
+    <!-- Proteogenomic test case -->
+    <test>
+      <param name="input" value="Freebayes_one-variant.vcf"/>
+      <param name="GRCh" value="GRCh38"/>
+      <param name="variant" value="variant.tsv"/>
+      <param name="gene" value="gene.tsv"/>
+      <param name="noncoding" value="noncoding.tsv"/>
+      <param name="error" value="error.tsv"/>
+      <param name="type" value="CHASM" />
+      <param name="classifier" value="Breast" />
+      <param name="proteoInput" value="yes" />
+      <param name="proBED" value="MCF7_proBed.bed"/>
+      <output_collection name="results" type="list">
+        <element name="variant">
+          <assert_contents>
+            <has_text text="hg38"/>
+            <has_text text="UPF1" />
+            <not_has_text text="CRABP2"/>
+          </assert_contents>
+        </element>
+      </output_collection>
+    </test>
     <!-- "Only intersected proteogenomic variants submitted" test case-->
     <test>
       <param name="input" value="Freebayes_two-variants.vcf"/>
@@ -137,9 +159,10 @@
       <output_collection name="results" type="list">
         <element name="variant">
           <assert_contents>
+            <has_text text="#Variant Report" />
             <has_text text="hg38"/>
             <has_text text="UPF1" />
-            <not_has_text text="CRABP2"/>
+            <has_text text="EAIDSPVSFLVLHNQIR" />
           </assert_contents>
         </element>
       </output_collection>
