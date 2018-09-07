@@ -24,7 +24,7 @@ from io import BytesIO
 # initializes blank parameters
 chasm_classifier = ''
 probed_filename = None
-intersected_only = False
+all_intersect = False
 vcf_output = None
 analysis_type = None
 
@@ -56,11 +56,8 @@ parser.add_argument('--classifier', help='The cancer classifier for the'
 parser.add_argument('--proBED', help='The filename of the proBED file '
                                      'containing peptides with genomic '
                                      'coordinates')
-parser.add_argument('--intersectOnly', help='Specifies whether to '
-                                            'analyze only variants '
-                                            'intersected between the '
-                                            'CRAVAT input and proBED '
-                                            'file')
+parser.add_argument('--allIntersect', help='Specifies whether to '
+                                            'analyze all variants')
 parser.add_argument('--vcfOutput', help='The output filename of the '
                                         'intersected VCF file')
 
@@ -78,8 +75,8 @@ if args.classifier:
     chasm_classifier = args.classifier
 if args.proBED:
     probed_filename = args.proBED
-if args.intersectOnly:
-    intersected_only = args.intersectOnly    
+if args.allIntersect:
+    all_intersect = args.allIntersect    
 if args.vcfOutput:
     vcf_output = args.vcfOutput
 
@@ -118,7 +115,7 @@ write_header = True
 # proteogenomic input (proBED) file if the user specifies that they want
 # to only include intersected variants or if they want to receive the
 # intersected VCF as well.
-if probed_filename and (vcf_output or intersected_only == 'true'):
+if probed_filename and (vcf_output or all_intersect == 'false'):
     proBED = loadProBED()
     if not vcf_output:
         vcf_output = 'intersected_input.vcf'
@@ -143,7 +140,7 @@ if probed_filename and (vcf_output or intersected_only == 'true'):
                                    genpos <= pepposB):
                         tsvout.writerow(row)
                         break
-if intersected_only == 'true':
+if all_intersect == 'false':
     input_filename = vcf_output
 
 # sets up the parameters for submission to the CRAVAT API
