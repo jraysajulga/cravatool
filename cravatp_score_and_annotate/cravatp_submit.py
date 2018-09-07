@@ -29,10 +29,7 @@ vcf_output = None
 analysis_type = None
 
 # # Testing Command
-# python cravatp_submit.py test-data/Freebayes_two-variants.vcf GRCh38
-# test-data/variant.tsv test-data/gene.tsv test-data/noncoding.tsv
-# test-data/error.tsv CHASM -—classifier Breast -—proBED
-# test-data/MCF7_proBed.bed
+# python cravatp_submit.py test-data/Freebayes_two-variants.vcf GRCh38 test-data/variant.tsv test-data/gene.tsv test-data/noncoding.tsv test-data/error.tsv CHASM -—classifier Breast -—proBED test-data/MCF7_proBed.bed
 parser = argparse.ArgumentParser()
 parser.add_argument('cravatInput',help='The filename of the input '
                                        'CRAVAT-formatted tabular file '
