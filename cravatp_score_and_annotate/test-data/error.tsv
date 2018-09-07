@@ -1,9 +1,9 @@
 #Input Errors Report
-#2018-08-13 15:36:32.358464
+#2018-09-07 16:42:38.414856
 #CRAVAT version: hybrid
 #Analysis done at http://www.cravat.us.
-#Job Id: rsajulga_20180813_113614
-#Input file: Freebayes_two_variants.vcf
+#Job Id: rsajulga_20180907_124216
+#Input file: Freebayes_one_variant.vcf
 #This report shows errors that occurred in the input.
 #Input coordinate: hg38 genomic.
 #CHASM classifier: Breast
